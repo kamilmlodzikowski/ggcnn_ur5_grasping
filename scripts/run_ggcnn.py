@@ -22,7 +22,8 @@ bridge = CvBridge()
 mypath = os.getcwd()
 
 # Load the Network.
-mypath=mypath+'/src/grasping_demo/ggcnn_ur5_grasping/scripts/model.hdf5'
+mypath=mypath+'/src/grasping_demo/ggcnn/data/networks/ggcnn_rss/epoch_29_model.hdf5'
+MODEL_FILE = '/src/grasping_demo/ggcnn/data/networks/ggcnn_rss/epoch_29_model.hdf5'
 model = load_model(mypath)
 
 rospy.init_node('ggcnn_detection')
@@ -42,13 +43,14 @@ ROBOT_Z = 0
 graph = tf.get_default_graph()
 
 # Get the camera parameters
-camera_info_msg = rospy.wait_for_message('/realsense_wrist/depth/camera_info', CameraInfo)
+print('czekam')
+camera_info_msg = rospy.wait_for_message('/realsense_wrist/color/camera_info', CameraInfo)
+print('mam')
 K = camera_info_msg.K
 fx = K[0]
 cx = K[2]
 fy = K[4]
 cy = K[5]
-
 
 # Execution Timing
 class TimeIt:
@@ -110,7 +112,7 @@ def depth_callback(depth_message):
         # Figure out roughly the depth in mm of the part between the grippers for collision avoidance.
         depth_center = depth_crop[100:141, 130:171].flatten()
         depth_center.sort()
-        depth_center = depth_center[:10].mean() * 1000.0
+        depth_center = depth_center[:10].mean()
 
     with TimeIt('Inference'):
         # Run it through the network.
@@ -138,7 +140,7 @@ def depth_callback(depth_message):
         # Calculate the best pose from the camera intrinsics.
         maxes = None
 
-        ALWAYS_MAX = False  # Use ALWAYS_MAX = True for the open-loop solution.
+        ALWAYS_MAX = False # Use ALWAYS_MAX = True for the open-loop solution.
 
         if ROBOT_Z > 0.34 or ALWAYS_MAX:  # > 0.34 initialises the max tracking when the robot is reset.
             # Track the global max.
@@ -164,9 +166,9 @@ def depth_callback(depth_message):
         point_depth = depth[max_pixel[0], max_pixel[1]]
 
         # These magic numbers are my camera intrinsic parameters.
-        x = (max_pixel[1] - cx)/(fx) * point_depth / 1000
-        y = (max_pixel[0] - cy)/(fy) * point_depth / 1000
-        z = point_depth / 1000
+        x = (max_pixel[1] - cx)/(fx) * point_depth /1000
+        y = (max_pixel[0] - cy)/(fy) * point_depth /1000
+        z = point_depth.astype(np.float32) /1000
 
         if np.isnan(z):
             return
@@ -200,11 +202,11 @@ def depth_callback(depth_message):
         # Output the best grasp pose relative to camera.
         cmd_msg = Float32MultiArray()
         cmd_msg.data = [x, y, z, ang, width, depth_center]
+        print ("DATA: ", cmd_msg.data)
         cmd_pub.publish(cmd_msg)
 
 
-depth_sub = rospy.Subscriber('/camera/depth/image_meters', Image, depth_callback, queue_size=1)
-robot_pos_sub = rospy.Subscriber('/m1n6s200_driver/out/tool_pose', PoseStamped, robot_pos_callback, queue_size=1)
-
+depth_sub = rospy.Subscriber('/realsense_wrist/depth/image_rect_raw', Image, depth_callback, queue_size=1)
+#robot_pos_sub = rospy.Subscriber('/UR5_pose', PoseStamped, robot_pos_callback, queue_size=1)
 while not rospy.is_shutdown():
     rospy.spin()
