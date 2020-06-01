@@ -11,6 +11,7 @@ import scipy.ndimage as ndimage
 from skimage.draw import circle
 from skimage.feature import peak_local_max
 
+import os
 import rospy
 from cv_bridge import CvBridge
 from geometry_msgs.msg import PoseStamped
@@ -18,10 +19,11 @@ from sensor_msgs.msg import Image, CameraInfo
 from std_msgs.msg import Float32MultiArray
 
 bridge = CvBridge()
+mypath = os.getcwd()
 
 # Load the Network.
-MODEL_FILE = 'PATH/TO/model.hdf5'
-model = load_model(MODEL_FILE)
+mypath=mypath+'/src/grasping_demo/ggcnn_ur5_grasping/scripts/model.hdf5'
+model = load_model(mypath)
 
 rospy.init_node('ggcnn_detection')
 
@@ -40,7 +42,7 @@ ROBOT_Z = 0
 graph = tf.get_default_graph()
 
 # Get the camera parameters
-camera_info_msg = rospy.wait_for_message('/camera/depth/camera_info', CameraInfo)
+camera_info_msg = rospy.wait_for_message('/realsense_wrist/depth/camera_info', CameraInfo)
 K = camera_info_msg.K
 fx = K[0]
 cx = K[2]
@@ -162,9 +164,9 @@ def depth_callback(depth_message):
         point_depth = depth[max_pixel[0], max_pixel[1]]
 
         # These magic numbers are my camera intrinsic parameters.
-        x = (max_pixel[1] - cx)/(fx) * point_depth
-        y = (max_pixel[0] - cy)/(fy) * point_depth
-        z = point_depth
+        x = (max_pixel[1] - cx)/(fx) * point_depth / 1000
+        y = (max_pixel[0] - cy)/(fy) * point_depth / 1000
+        z = point_depth / 1000
 
         if np.isnan(z):
             return
