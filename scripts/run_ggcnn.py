@@ -166,9 +166,9 @@ def depth_callback(depth_message):
         point_depth = depth[max_pixel[0], max_pixel[1]]
 
         # These magic numbers are my camera intrinsic parameters.
-        x = (max_pixel[1] - cx)/(fx) * point_depth /1000
-        y = (max_pixel[0] - cy)/(fy) * point_depth /1000
-        z = point_depth.astype(np.float32) /1000
+        x = (max_pixel[1] - cx)/(fx) * point_depth 
+        y = (max_pixel[0] - cy)/(fy) * point_depth 
+        z = point_depth.astype(np.float32) 
 
         if np.isnan(z):
             return

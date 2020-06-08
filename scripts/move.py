@@ -8,9 +8,11 @@ import time
 
 def move(pose_g):
     global last_z
-
+    print('call')
     if not (pose_g.data[0] == 0 or pose_g.data[1] == 0 or pose_g.data[2] <= 0.15 or pose_g.data[2] > last_z):
+	print('PUB')
         tools.move2(pose_g, pub, 0)
+	
     # else:
     #     time_now = time.time()
     #     if ok == True:
@@ -35,8 +37,7 @@ def move(pose_g):
     #             tools.check_joints(manipulator)
 
 rospy.init_node('move')
-pub = rospy.Publisher('/controller_ur/move_to_pose', PoseStamped)
-
+pub = rospy.Publisher('/controller_ur/move_to_pose', PoseStamped, queue_size=1)
 last_z = 1000
 ok = False
 

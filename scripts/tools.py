@@ -19,10 +19,9 @@ def move2(pose_g, publisher, min_z, rot_z=0):
     c = np.cos(-pose_g.data[3])
     s = np.sin(-pose_g.data[3])
 
-    orientation_ggcnn = [[c, -s, 0, 0],
-                        [s, c, 0, 0],
-                        [0, 0, 1, 0],
-                        [0, 0, 0, 1]]
+    orientation_ggcnn = [[c, -s, 0],
+                        [s, c, 0],
+                        [0, 0, 1]]
 
     r = Rotation.from_dcm(orientation_ggcnn)
 
@@ -33,7 +32,7 @@ def move2(pose_g, publisher, min_z, rot_z=0):
     pose.pose.orientation.z = quat[2]
     pose.pose.orientation.w = quat[3]
 
-    publisher.pub(pose)
+    publisher.publish(pose)
 
     # new_matrix = np.matmul(newish_matrix, orientation_ggcnn)
 
