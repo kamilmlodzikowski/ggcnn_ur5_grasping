@@ -12,25 +12,25 @@ from geometry_msgs.msg import PoseStamped
 def move2(pose_g, publisher, min_z, rot_z=0):
     pose = PoseStamped()
 
-    pose.pose.position.x = -pose_g.data[0]
-    pose.pose.position.y = -pose_g.data[1]+0.06
-    pose.pose.position.z = pose_g.data[2]-0.13
+    pose.pose.position.x = pose_g.data[0]
+    pose.pose.position.y = pose_g.data[2]-0.13
+    pose.pose.position.z = pose_g.data[1]+0.06
 
-    c = np.cos(-pose_g.data[3])
-    s = np.sin(-pose_g.data[3])
+    # c = np.cos(-pose_g.data[3])
+    # s = np.sin(-pose_g.data[3])
+    #
+    # orientation_ggcnn = [[c, -s, 0],
+    #                     [s, c, 0],
+    #                     [0, 0, 1]]
+    #
+    # r = Rotation.from_dcm(orientation_ggcnn)
+    #
+    # quat = r.as_quat()
 
-    orientation_ggcnn = [[c, -s, 0],
-                        [s, c, 0],
-                        [0, 0, 1]]
-
-    r = Rotation.from_dcm(orientation_ggcnn)
-
-    quat = r.as_quat()
-
-    pose.pose.orientation.x = quat[0]
-    pose.pose.orientation.y = quat[1]
-    pose.pose.orientation.z = quat[2]
-    pose.pose.orientation.w = quat[3]
+    pose.pose.orientation.x = 0 #quat[0]
+    pose.pose.orientation.y = 0 #quat[1]
+    pose.pose.orientation.z = 0 #quat[2]
+    pose.pose.orientation.w = 1 #quat[3]
 
     publisher.publish(pose)
 

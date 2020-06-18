@@ -4,14 +4,37 @@ import rospy
 import tools
 from geometry_msgs.msg import PoseStamped
 from std_msgs.msg import Float32MultiArray
+from std_msgs.msg import String
 import time
 
 def move(pose_g):
-    global last_z
-    print('call')
-    if not (pose_g.data[0] == 0 or pose_g.data[1] == 0 or pose_g.data[2] <= 0.15 or pose_g.data[2] > last_z):
-	print('PUB')
-        tools.move2(pose_g, pub, 0)
+    global start
+    global done
+    global once
+    if (not start) and (not done):
+        order = 'moveLookingDown'
+        print order
+        rospy.sleep(0.2)
+        pub_order.publish(order)
+        done = True
+
+    elif (not start) and done:
+        # rospy.sleep(5.)
+        msg = rospy.wait_for_message('/controller_ur/currentState', String)
+        print msg.data
+        if msg.data == 'STATE_MOVING':
+            once = True
+        if once and msg.data == 'STATE_NORMAL':
+            start = True
+
+    elif start:
+        global last_z
+        print('call')
+        rate = rospy.Rate(1)
+        if not (pose_g.data[0] == 0 or pose_g.data[1] == 0 or pose_g.data[2] <= 0.15 or pose_g.data[2] > last_z):
+            print('PUB')
+            tools.move2(pose_g, pub, 0)
+            rate.sleep()
 	
     # else:
     #     time_now = time.time()
@@ -36,12 +59,17 @@ def move(pose_g):
     #             ok = False
     #             tools.check_joints(manipulator)
 
+
 rospy.init_node('move')
 pub = rospy.Publisher('/controller_ur/move_to_pose', PoseStamped, queue_size=1)
+pub_order = rospy.Publisher('/controller_ur/order', String, queue_size=1)
+pose_goal = rospy.Subscriber('/ggcnn/out/command', Float32MultiArray, move, queue_size=1)
+
 last_z = 1000
 ok = False
-
-pose_goal = rospy.Subscriber('/ggcnn/out/command', Float32MultiArray, move, queue_size=1)
+start = False
+done = False
+once = False
 
 while not rospy.is_shutdown():
     rospy.spin()
