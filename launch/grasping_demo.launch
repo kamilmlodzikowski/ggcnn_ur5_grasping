@@ -1,0 +1,5 @@
+<?xml version="1.0"?>
+<launch>
+    <node pkg="grasping_demo" name="run_ggcnn" type="run_ggcnn.py" output="screen"/>
+    <node pkg="grasping_demo" name="move_ggcnn" type="move.py" output="screen"/>
+</launch>

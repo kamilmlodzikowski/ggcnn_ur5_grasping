@@ -4,6 +4,7 @@ import time
 
 import numpy as np
 import tensorflow as tf
+
 from keras.models import load_model
 
 import cv2
@@ -12,6 +13,7 @@ from skimage.draw import circle
 from skimage.feature import peak_local_max
 
 import os
+import sys
 import rospy
 from cv_bridge import CvBridge
 from geometry_msgs.msg import PoseStamped
@@ -19,10 +21,10 @@ from sensor_msgs.msg import Image, CameraInfo
 from std_msgs.msg import Float32MultiArray
 
 bridge = CvBridge()
-mypath = os.getcwd()
+mypath = homedir = os.path.expanduser("~")
 
 # Load the Network.
-mypath=mypath+'/src/grasping_demo/ggcnn/data/networks/ggcnn_rss/epoch_29_model.hdf5'
+mypath=mypath+'/robot40human_ws/src/grasping_demo/ggcnn/data/networks/ggcnn_rss/epoch_29_model.hdf5'
 MODEL_FILE = '/src/grasping_demo/ggcnn/data/networks/ggcnn_rss/epoch_29_model.hdf5'
 model = load_model(mypath)
 
@@ -43,9 +45,9 @@ ROBOT_Z = 0
 graph = tf.get_default_graph()
 
 # Get the camera parameters
-print('czekam')
+print('Waiting for /camera_info')
 camera_info_msg = rospy.wait_for_message('/realsense_wrist/color/camera_info', CameraInfo)
-print('mam')
+print('Got /camera_info, moving on')
 K = camera_info_msg.K
 fx = K[0]
 cx = K[2]
@@ -133,8 +135,8 @@ def depth_callback(depth_message):
 
     with TimeIt('Filter'):
         # Filter the outputs.
-        points_out = ndimage.filters.gaussian_filter(points_out, 5.0)  # 3.0
-        ang_out = ndimage.filters.gaussian_filter(ang_out, 2.0)
+        points_out = ndimage.filters.gaussian_filter(points_out, 4.0)  # 3.0
+        ang_out = ndimage.filters.gaussian_filter(ang_out, 5.0)
 
     with TimeIt('Control'):
         # Calculate the best pose from the camera intrinsics.
@@ -202,7 +204,7 @@ def depth_callback(depth_message):
         # Output the best grasp pose relative to camera.
         cmd_msg = Float32MultiArray()
         cmd_msg.data = [x, y, z, ang, width, depth_center]
-        print ("DATA: ", cmd_msg.data)
+        #print ("DATA: ", cmd_msg.data)
         cmd_pub.publish(cmd_msg)
 
 

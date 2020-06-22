@@ -13,7 +13,7 @@ def move(pose_g):
     global once
     if (not start) and (not done):
         order = 'moveLookingDown'
-        print order
+        # print order
         rospy.sleep(0.2)
         pub_order.publish(order)
         done = True
@@ -21,7 +21,7 @@ def move(pose_g):
     elif (not start) and done:
         # rospy.sleep(5.)
         msg = rospy.wait_for_message('/controller_ur/currentState', String)
-        print msg.data
+        # print msg.data
         if msg.data == 'STATE_MOVING':
             once = True
         if once and msg.data == 'STATE_NORMAL':
@@ -29,10 +29,10 @@ def move(pose_g):
 
     elif start:
         global last_z
-        print('call')
+        #print('Got new data')
         rate = rospy.Rate(1)
         if not (pose_g.data[0] == 0 or pose_g.data[1] == 0 or pose_g.data[2] <= 0.15 or pose_g.data[2] > last_z):
-            print('PUB')
+            #print('Publishing new pose')
             tools.move2(pose_g, pub, 0)
             rate.sleep()
 	
