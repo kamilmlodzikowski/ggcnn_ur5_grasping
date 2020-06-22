@@ -7,30 +7,42 @@ from scipy.spatial.transform import Rotation
 # from std_msgs.msg import Float32MultiArray
 # from nav_msgs.msg import Path
 from geometry_msgs.msg import PoseStamped
+import moveit_commander
+import moveit_msgs.msg
+
+
+def euler_to_quaternion(roll, pitch, yaw):
+    qx = np.sin(roll / 2) * np.cos(pitch / 2) * np.cos(yaw / 2) - np.cos(roll / 2) * np.sin(pitch / 2) * np.sin(yaw / 2)
+    qy = np.cos(roll / 2) * np.sin(pitch / 2) * np.cos(yaw / 2) + np.sin(roll / 2) * np.cos(pitch / 2) * np.sin(yaw / 2)
+    qz = np.cos(roll / 2) * np.cos(pitch / 2) * np.sin(yaw / 2) - np.sin(roll / 2) * np.sin(pitch / 2) * np.cos(yaw / 2)
+    qw = np.cos(roll / 2) * np.cos(pitch / 2) * np.cos(yaw / 2) + np.sin(roll / 2) * np.sin(pitch / 2) * np.sin(yaw / 2)
+
+    return [qx, qy, qz, qw]
 
 
 def move2(pose_g, publisher, min_z, rot_z=0):
     pose = PoseStamped()
 
-    pose.pose.position.x = pose_g.data[0]
+    group = moveit_commander.MoveGroupCommander("right_arm")
+    pozycja = group.get_current_pose().pose.position
+    z = pozycja.z
+
+    # for unknown reason the Y and Z axis are switched in place in translation
+    # and X and Z in orientation
+
+    pose.pose.position.x = pose_g.data[1]-0.06
     pose.pose.position.y = pose_g.data[2]-0.13
-    pose.pose.position.z = pose_g.data[1]+0.06
+    pose.pose.position.z = pose_g.data[0]
 
-    # c = np.cos(-pose_g.data[3])
-    # s = np.sin(-pose_g.data[3])
-    #
-    # orientation_ggcnn = [[c, -s, 0],
-    #                     [s, c, 0],
-    #                     [0, 0, 1]]
-    #
-    # r = Rotation.from_dcm(orientation_ggcnn)
-    #
-    # quat = r.as_quat()
+    if z + pose_g.data[1]-0.06 > min_z:
+        pose.pose.position.y = min_z
 
-    pose.pose.orientation.x = 0 #quat[0]
-    pose.pose.orientation.y = 0 #quat[1]
-    pose.pose.orientation.z = 0 #quat[2]
-    pose.pose.orientation.w = 1 #quat[3]
+    qx, qy, qz, qw = euler_to_quaternion(-pose_g.data[3], 0, 0)
+
+    pose.pose.orientation.x = qx
+    pose.pose.orientation.y = qy
+    pose.pose.orientation.z = qz
+    pose.pose.orientation.w = qw
 
     publisher.publish(pose)
 
@@ -45,7 +57,6 @@ def move2(pose_g, publisher, min_z, rot_z=0):
     # if limit[2][3] > min_z:
     #     limit [2][3] = min_z
     #     new_matrix = np.matmul(rot_x_limit, limit)
-
 
     # should_do = np.matmul(inv_mat, akt_matrix)
     # if should_do[2][3] > min_z-0.15:
