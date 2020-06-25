@@ -30,8 +30,8 @@ def move2(pose_g, publisher, min_z, rot_z=0):
     # for unknown reason the Y and Z axis are switched in place in translation
     # and X and Z in orientation
 
-    pose.pose.position.x = pose_g.data[1]-0.06
-    pose.pose.position.y = pose_g.data[2]-0.13
+    pose.pose.position.x = -pose_g.data[1]+0.06
+    pose.pose.position.y = pose_g.data[2]-0.2#-0.13
     pose.pose.position.z = pose_g.data[0]
 
     if z + pose_g.data[1]-0.06 > min_z:

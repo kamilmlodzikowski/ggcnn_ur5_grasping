@@ -34,7 +34,7 @@ def move(pose_g):
         rate = rospy.Rate(1)
         if not (pose_g.data[0] == 0 or pose_g.data[1] == 0 or pose_g.data[2] <= 0.15 or pose_g.data[2] > last_z):
             #print('Publishing new pose')
-            tools.move2(pose_g, pub, 1.45)
+            tools.move2(pose_g, pub, 1.2)
             rate.sleep()
 	
     # else:
@@ -71,7 +71,7 @@ ok = False
 start = False
 done = False
 once = False
-# min_z = input('Enter minimum z value (default for "coffee_table" is 1.5)')
+# min_z = input('Enter minimum z value (default for "coffee_table" is 1.2)')
 
 while not rospy.is_shutdown():
     rospy.spin()
