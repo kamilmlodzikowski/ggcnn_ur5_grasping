@@ -208,8 +208,7 @@ def depth_callback(depth_message):
         cmd_pub.publish(cmd_msg)
 
 
-depth_sub = rospy.Subscriber('/camera/depth/image_rect_raw', Image, depth_callback, queue_size=1)
-print("DOL")
+depth_sub = rospy.Subscriber('object_detection/depth', Image, depth_callback, queue_size=1)
 #robot_pos_sub = rospy.Subscriber('/UR5_pose', PoseStamped, robot_pos_callback, queue_size=1)
 while not rospy.is_shutdown():
     rospy.spin()
