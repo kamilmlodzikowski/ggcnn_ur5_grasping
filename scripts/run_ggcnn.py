@@ -46,7 +46,7 @@ graph = tf.get_default_graph()
 
 # Get the camera parameters
 print('Waiting for /camera_info')
-camera_info_msg = rospy.wait_for_message('/realsense_wrist/color/camera_info', CameraInfo)
+camera_info_msg = rospy.wait_for_message('/camera/depth/camera_info', CameraInfo)
 print('Got /camera_info, moving on')
 K = camera_info_msg.K
 fx = K[0]
@@ -82,7 +82,7 @@ def depth_callback(depth_message):
     global prev_mp
     global ROBOT_Z
     global fx, cx, fy, cy
-
+    print("O TUTAJ")
     with TimeIt('Crop'):
         depth = bridge.imgmsg_to_cv2(depth_message)
 
@@ -208,7 +208,8 @@ def depth_callback(depth_message):
         cmd_pub.publish(cmd_msg)
 
 
-depth_sub = rospy.Subscriber('/realsense_wrist/depth/image_rect_raw', Image, depth_callback, queue_size=1)
+depth_sub = rospy.Subscriber('/camera/depth/image_rect_raw', Image, depth_callback, queue_size=1)
+print("DOL")
 #robot_pos_sub = rospy.Subscriber('/UR5_pose', PoseStamped, robot_pos_callback, queue_size=1)
 while not rospy.is_shutdown():
     rospy.spin()
