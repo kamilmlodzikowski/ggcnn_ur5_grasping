@@ -87,7 +87,7 @@ def depth_callback(depth_message):
         depth = bridge.imgmsg_to_cv2(depth_message)
 
         # Crop a square out of the middle of the depth and resize it to 300*300
-        crop_size = 400
+        crop_size = depth.shape[0]
         depth_crop = cv2.resize(depth[(480-crop_size)//2:(480-crop_size)//2+crop_size, (640-crop_size)//2:(640-crop_size)//2+crop_size], (300, 300))
 
         # Replace nan with 0 for inpainting.
@@ -104,7 +104,7 @@ def depth_callback(depth_message):
         depth_scale = np.abs(depth_crop).max()
         depth_crop = depth_crop.astype(np.float32)/depth_scale  # Has to be float32, 64 not supported.
 
-        depth_crop = cv2.inpaint(depth_crop, mask, 1, cv2.INPAINT_NS)
+        # depth_crop = cv2.inpaint(depth_crop, mask, 1, cv2.INPAINT_NS)
 
         # Back to original size and value range.
         depth_crop = depth_crop[1:-1, 1:-1]
