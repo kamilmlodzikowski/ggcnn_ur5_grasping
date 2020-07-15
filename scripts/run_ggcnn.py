@@ -104,7 +104,7 @@ def depth_callback(depth_message):
         depth_scale = np.abs(depth_crop).max()
         depth_crop = depth_crop.astype(np.float32)/depth_scale  # Has to be float32, 64 not supported.
 
-        # depth_crop = cv2.inpaint(depth_crop, mask, 1, cv2.INPAINT_NS)
+        depth_crop = cv2.inpaint(depth_crop, mask, 1, cv2.INPAINT_NS)
 
         # Back to original size and value range.
         depth_crop = depth_crop[1:-1, 1:-1]
