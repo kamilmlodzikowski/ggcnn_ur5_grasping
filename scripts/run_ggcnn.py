@@ -82,7 +82,6 @@ def depth_callback(depth_message):
     global prev_mp
     global ROBOT_Z
     global fx, cx, fy, cy
-    print("O TUTAJ")
     with TimeIt('Crop'):
         depth = bridge.imgmsg_to_cv2(depth_message)
 
