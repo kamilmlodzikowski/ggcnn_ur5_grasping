@@ -12,14 +12,9 @@ def move(pose_g):
     global done
     # global min_z
     global once
-    if (not start) and (not done):
-        order = 'moveLookingDown'
-        # print order
-        rospy.sleep(0.2)
-        pub_order.publish(order)
-        done = True
+    print "tutaj"
 
-    elif (not start) and done:
+    if (not start) and done:
         # rospy.sleep(5.)
         msg = rospy.wait_for_message('/controller_ur/currentState', String)
         # print msg.data
@@ -65,13 +60,23 @@ rospy.init_node('move')
 pub = rospy.Publisher('/controller_ur/move_to_pose', PoseStamped, queue_size=1)
 pub_order = rospy.Publisher('/controller_ur/order', String, queue_size=1)
 pose_goal = rospy.Subscriber('/ggcnn/out/command', Float32MultiArray, move, queue_size=1)
-
 last_z = 1000
 ok = False
 start = False
 done = False
 once = False
 # min_z = input('Enter minimum z value (default for "coffee_table" is 1.2)')
+if (not start) and (not done):
+    order = 'moveLookingDown'
+    # print order
+    print("publishing order ", order)
+    rospy.sleep(1)
+
+    pub_order.publish(order)
+    rospy.sleep(1)
+
+    done = True
+    print "jusz"
 
 while not rospy.is_shutdown():
     rospy.spin()

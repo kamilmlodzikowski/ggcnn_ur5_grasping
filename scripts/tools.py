@@ -30,20 +30,21 @@ def move2(pose_g, publisher, min_z, rot_z=0):
     # for unknown reason the Y and Z axis are switched in place in translation
     # and X and Z in orientation
 
-    pose.pose.position.x = -pose_g.data[1]+0.06
-    pose.pose.position.y = pose_g.data[2]-0.2#-0.13
-    pose.pose.position.z = pose_g.data[0]
+    pose.pose.position.x = -pose_g.data[1]/1000+0.06
+    pose.pose.position.y = pose_g.data[2]/1000-0.2#-0.13
+    pose.pose.position.z = pose_g.data[0]/1000
 
     # if z + pose_g.data[1]-0.06 > min_z:
     #     pose.pose.position.y = min_z
 
     qx, qy, qz, qw = euler_to_quaternion(-pose_g.data[3], 0, 0)
 
-    pose.pose.orientation.x = qx
-    pose.pose.orientation.y = qy
-    pose.pose.orientation.z = qz
-    pose.pose.orientation.w = qw
+    pose.pose.orientation.x = 0#qx
+    pose.pose.orientation.y = 0#qy
+    pose.pose.orientation.z = 0#qz
+    pose.pose.orientation.w = 1#qw
 
+    print pose
     publisher.publish(pose)
 
     # new_matrix = np.matmul(newish_matrix, orientation_ggcnn)
