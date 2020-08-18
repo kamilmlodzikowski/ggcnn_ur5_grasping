@@ -7,6 +7,19 @@ from std_msgs.msg import Float32MultiArray
 from std_msgs.msg import String
 import time
 import tf
+from rg6_service.srv import RG6_grip, RG6_gripResponse
+
+
+def starter():
+    order = 'moveLookingDown'
+    # print order
+    print("publishing order ", order)
+    rospy.sleep(1)
+
+    pub_order.publish(order)
+    rospy.sleep(1)
+
+    return True
 
 
 def move(pose_g):
@@ -26,9 +39,11 @@ def move(pose_g):
 
     elif start:
         global last_z
+        global time_last, time_now
         #print('Got new data')
         rate = rospy.Rate(1)
         listener = tf.TransformListener()
+        time_now = time.time()
         try:
             (trans, _) = listener.waitForTransform('/base_link', '/ee_link', rospy.Time(0), rospy.Duration(1))
             min_z = trans[2]
@@ -38,7 +53,18 @@ def move(pose_g):
         if not (pose_g.data[0] == 0 or pose_g.data[1] == 0 or pose_g.data[2] <= 0.15 or pose_g.data[2] > last_z):
             #print('Publishing new pose')
             tools.move2(pose_g, pub, min_z, 1.2)
+            time_last = time.time()
             rate.sleep()
+        else:
+            if int(time_now-time_last) >= 4:
+                try:
+                    print("Grasping...")
+                    gripper(0)
+                    rospy.sleep(3)
+                    done = starter()
+                except rospy.ServiceException as e:
+                    print("Service call failed: %s" % e)
+
 	
     # else:
     #     time_now = time.time()
@@ -73,17 +99,17 @@ ok = False
 start = False
 done = False
 once = False
+time_last = 0
+time_now = 0
+print("Waiting for gripper service...")
+rospy.wait_for_service('/rg2_gripper/control_width')
+gripper = rospy.ServiceProxy('/rg2_gripper/control_width', RG6_grip)
+print("Got it\n")
+print("Move arm to touch the table")
+raw_input("Press enter...")
 # min_z = input('Enter minimum z value (default for "coffee_table" is 1.2)')
 if (not start) and (not done):
-    order = 'moveLookingDown'
-    # print order
-    print("publishing order ", order)
-    rospy.sleep(1)
-
-    pub_order.publish(order)
-    rospy.sleep(1)
-
-    done = True
+    done = starter()
 
 while not rospy.is_shutdown():
     rospy.spin()
