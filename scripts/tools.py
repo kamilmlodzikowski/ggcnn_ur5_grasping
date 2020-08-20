@@ -30,18 +30,18 @@ def move2(pose_g, publisher, current_z, min_z, rot_z=0):
     # for unknown reason the Y and Z axis are switched in place in translation
     # and X and Z in orientation
 
-    pose.pose.position.x = -pose_g.data[0]/1000 + 0.06
-    pose.pose.position.y = pose_g.data[1]/1000 - 0.2#-0.13
-    pose.pose.position.z = pose_g.data[2]/1000 - 0.06
+    pose.pose.position.x = pose_g.data[2]/1000 - 0.06
+    pose.pose.position.y = pose_g.data[1]/1000 - 0.06#-0.13
+    pose.pose.position.z = pose_g.data[0]/1000 - 0.2
 
-    if current_z - pose_g.data[1] < min_z:
-        pose.pose.position.y = current_z - min_z
+    if current_z - pose_g.data[2] < min_z:
+        pose.pose.position.x = current_z - min_z
 
     qx, qy, qz, qw = euler_to_quaternion(0, 0, -pose_g.data[3])
 
-    pose.pose.orientation.x = qx
+    pose.pose.orientation.x = qz
     pose.pose.orientation.y = qy
-    pose.pose.orientation.z = qz
+    pose.pose.orientation.z = qx
     pose.pose.orientation.w = qw
 
     print pose

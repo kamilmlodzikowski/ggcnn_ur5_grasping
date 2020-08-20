@@ -205,6 +205,8 @@ def depth_callback(depth_message):
         cmd_msg.data = [x, y, z, ang, width, depth_center]
         #print ("DATA: ", cmd_msg.data)
         cmd_pub.publish(cmd_msg)
+        r = rospy.Rate(1)
+        r.sleep()
 
 
 depth_sub = rospy.Subscriber('object_detection/depth', Image, depth_callback, queue_size=1)
