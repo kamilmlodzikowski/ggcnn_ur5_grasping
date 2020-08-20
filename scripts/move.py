@@ -10,6 +10,7 @@ import tf
 from rg6_service.srv import RG6_grip, RG6_gripResponse
 from std_msgs.msg import Float64
 from moveit_msgs.msg import ExecuteTrajectoryActionResult
+from sensor_msgs.msg import Image
 
 
 def starter():
@@ -40,7 +41,7 @@ def move(pose_g):
     global listener
     global min_z
 
-    rate = rospy.Rate(1)
+    rate = rospy.Rate(0.5)
     time_now = time.time()
     if done:
         try:
@@ -50,7 +51,7 @@ def move(pose_g):
         except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
             print "Couldn't find '/base_link' -> '/ee_link' transform"
             return -1
-        if not (pose_g.data[0] == 0 or pose_g.data[1] == 0 or pose_g.data[2] <= 0.15 or pose_g.data[2] > last_z):
+        if not (pose_g.data[0] == 0 or pose_g.data[1] == 0 or pose_g.data[2] > last_z):
             #print('Publishing new pose')
             tools.move2(pose_g, pub, cur_z, min_z)
             time_last = time.time()
@@ -59,7 +60,7 @@ def move(pose_g):
         else:
             done = False
             print int(time_now-time_last)
-            if int(time_now-time_last) >= 4:
+            if int(time_now-time_last) >= 8:
                 try:
                     print("Grasping...")
                     cmd = Float64(0)
@@ -79,8 +80,9 @@ time_now = time.time()
 rospy.init_node('move')
 
 pub = rospy.Publisher('/controller_ur/move_to_pose', PoseStamped, queue_size=1)
+pub_depth = rospy.Publisher('object_detection/depth_GG', Image, queue_size=1)
 pub_order = rospy.Publisher('/controller_ur/order', String, queue_size=1)
-pose_goal = rospy.Subscriber('/ggcnn/out/command', Float32MultiArray, move, queue_size=1)
+#pose_goal = rospy.Subscriber('/ggcnn/out/command', Float32MultiArray, move, queue_size=1)
 
 print("Waiting for gripper service...")
 rospy.wait_for_service('/rg2_gripper/control_width')
@@ -120,6 +122,10 @@ if (not start) and (not done):
     done = starter()
 
 while not rospy.is_shutdown():
+    depth = rospy.wait_for_message('object_detection/depth', Image)
+    pub_depth.publish(depth)
+    pose_gg = rospy.wait_for_message('/ggcnn/out/command', Float32MultiArray)
+    move(pose_gg)
     rospy.spin()
 
 

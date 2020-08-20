@@ -32,9 +32,9 @@ rospy.init_node('ggcnn_detection')
 
 # Output publishers.
 grasp_pub = rospy.Publisher('ggcnn/img/grasp', Image, queue_size=1)
-grasp_plain_pub = rospy.Publisher('ggcnn/img/grasp_plain', Image, queue_size=1)
-depth_pub = rospy.Publisher('ggcnn/img/depth', Image, queue_size=1)
-ang_pub = rospy.Publisher('ggcnn/img/ang', Image, queue_size=1)
+#grasp_plain_pub = rospy.Publisher('ggcnn/img/grasp_plain', Image, queue_size=1)
+#depth_pub = rospy.Publisher('ggcnn/img/depth', Image, queue_size=1)
+#ang_pub = rospy.Publisher('ggcnn/img/ang', Image, queue_size=1)
 cmd_pub = rospy.Publisher('ggcnn/out/command', Float32MultiArray, queue_size=1)
 
 # Initialise some globals.
@@ -194,11 +194,11 @@ def depth_callback(depth_message):
 
         grasp_img_plain = bridge.cv2_to_imgmsg(grasp_img_plain, 'bgr8')
         grasp_img_plain.header = depth_message.header
-        grasp_plain_pub.publish(grasp_img_plain)
+        #grasp_plain_pub.publish(grasp_img_plain)
 
-        depth_pub.publish(bridge.cv2_to_imgmsg(depth_crop))
+        #depth_pub.publish(bridge.cv2_to_imgmsg(depth_crop))
 
-        ang_pub.publish(bridge.cv2_to_imgmsg(ang_out))
+        #ang_pub.publish(bridge.cv2_to_imgmsg(ang_out))
 
         # Output the best grasp pose relative to camera.
         cmd_msg = Float32MultiArray()
@@ -209,6 +209,6 @@ def depth_callback(depth_message):
         r.sleep()
 
 
-depth_sub = rospy.Subscriber('object_detection/depth', Image, depth_callback, queue_size=1)
+depth_sub = rospy.Subscriber('object_detection/depth_GG', Image, depth_callback, queue_size=1)
 #robot_pos_sub = rospy.Subscriber('/UR5_pose', PoseStamped, robot_pos_callback, queue_size=1)
 rospy.spin()

@@ -21,6 +21,7 @@ def euler_to_quaternion(roll, pitch, yaw):
 
 def move2(pose_g, publisher, current_z, min_z, rot_z=0):
     pose = PoseStamped()
+    step = 0.05
 
     # group = moveit_commander.MoveGroupCommander("right_arm")
     # pozycja = group.get_current_pose().pose.position
@@ -30,9 +31,12 @@ def move2(pose_g, publisher, current_z, min_z, rot_z=0):
     # for unknown reason the Y and Z axis are switched in place in translation
     # and X and Z in orientation
 
-    pose.pose.position.x = pose_g.data[2]/1000 - 0.06
-    pose.pose.position.y = pose_g.data[1]/1000 - 0.06#-0.13
-    pose.pose.position.z = pose_g.data[0]/1000 - 0.2
+    pose.pose.position.x = pose_g.data[2]/1000 - 0.2
+    pose.pose.position.y = pose_g.data[1]/1000 - 0.13
+    pose.pose.position.z = pose_g.data[0]/1000 - 0.06
+
+    if pose.pose.position.x > step:
+        pose.pose.position.x = step
 
     if current_z - pose_g.data[2] < min_z:
         pose.pose.position.x = current_z - min_z
@@ -45,8 +49,9 @@ def move2(pose_g, publisher, current_z, min_z, rot_z=0):
     pose.pose.orientation.w = qw
 
     print pose
+    rospy.sleep(0.5)
     publisher.publish(pose)
-    rospy.sleep(0.1)
+    rospy.sleep(0.5)
 
     # new_matrix = np.matmul(newish_matrix, orientation_ggcnn)
 
