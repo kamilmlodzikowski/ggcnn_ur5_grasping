@@ -11,6 +11,9 @@ from geometry_msgs.msg import PoseStamped
 import moveit_commander
 import moveit_msgs.msg
 import tf
+import moveit_ros_planning_interface as moveit
+import geometry_msgs.msg
+from math import cos, sin
 
 
 def euler_to_quaternion(roll, pitch, yaw):
@@ -18,40 +21,106 @@ def euler_to_quaternion(roll, pitch, yaw):
 
     return [qx, qy, qz, qw]
 
+def quaternion_to_euler(quat):
+    roll, pitch, yaw = tf.transformations.euler_from_quaternion(quat)
 
-def move2(pose_g, publisher, current_z, min_z, rot_z=0):
-    pose = PoseStamped()
-    step = 0.05
-
-    # group = moveit_commander.MoveGroupCommander("right_arm")
-    # pozycja = group.get_current_pose().pose.position
-    # z = pozycja.z
+    return [roll, pitch, yaw]
 
 
-    # for unknown reason the Y and Z axis are switched in place in translation
-    # and X and Z in orientation
+def move2(pose_g, min_z, listener, group, planning_frame, eef_link,rot_z=0):
+    step = - 0.05
+    xy_step = 0.05
 
-    pose.pose.position.x = pose_g.data[2]/1000 - 0.2
-    pose.pose.position.y = pose_g.data[1]/1000 - 0.13
-    pose.pose.position.z = pose_g.data[0]/1000 - 0.06
+    #MoveIt
+    try:
+        trans, rot = listener.lookupTransform(planning_frame, eef_link, rospy.Time(0))
 
-    if pose.pose.position.x > step:
-        pose.pose.position.x = step
+        current_z_rot = quaternion_to_euler(rot)[2]
 
-    if current_z - pose_g.data[2] < min_z:
-        pose.pose.position.x = current_z - min_z
+        cos_z = cos(current_z_rot)
+        sin_z = sin(current_z_rot)
 
-    qx, qy, qz, qw = euler_to_quaternion(0, 0, -pose_g.data[3])
+        x = pose_g[1]/ 1000
+        y = pose_g[0]/ 1000
+        z = -pose_g[2] / 1000 + 0.15
 
-    pose.pose.orientation.x = qz
-    pose.pose.orientation.y = qy
-    pose.pose.orientation.z = qx
-    pose.pose.orientation.w = qw
+        print "X "+str(x)
+        print "Y "+str(y)
 
-    print pose
-    rospy.sleep(0.5)
-    publisher.publish(pose)
-    rospy.sleep(0.5)
+        if z < step:
+            z = step
+
+        if x < -xy_step:
+            x = -xy_step
+        elif x > xy_step:
+            x = xy_step
+        if y < -xy_step:
+            y = -xy_step
+        elif y > xy_step:
+            y = xy_step
+
+        x += 0.07
+        y += 0.02
+        # x = 0.0
+        # y = 0.0
+
+        pose_goal = geometry_msgs.msg.Pose()
+        pose_goal.orientation.w = rot[3]
+        pose_goal.orientation.x = rot[0]
+        pose_goal.orientation.y = rot[1]
+        pose_goal.orientation.z = rot[2]
+        pose_goal.position.x = trans[0] + x * sin_z + y * cos_z
+        pose_goal.position.y = trans[1] + y * sin_z + x * cos_z
+        pose_goal.position.z = trans[2] + z
+
+        if pose_goal.position.z < min_z:
+            pose_goal.position.z = min_z
+
+        group.set_pose_target(pose_goal)
+
+        print pose_goal
+
+        plan = group.go(wait=True)
+        # Calling `stop()` ensures that there is no residual movement
+        group.stop()
+        # It is always good to clear your targets after planning with poses.
+        group.clear_pose_targets()
+        rospy.sleep(1.0)
+
+    except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
+        print "Couldn't find " + planning_frame + "->" + eef_link + " transform"
+
+def move2joint(joints, group):
+    group.go(joints, wait=True)
+    group.stop()
+
+def moveLookingDown(group):
+    #joints = [3.10, -3.30, -0.82, 2.53, 0.77, -0.03]
+    joints = [3.2724923474893677, -3.070034154258026, -1.0691886997717261, -0.4429645641561608, -0.8159414253073491, 2.9478611066184226]
+    move2joint(joints, group)
+
+def get_current_z(listener, planning_frame, eef_link):
+    trans, rot = listener.lookupTransform(planning_frame, eef_link, rospy.Time(0))
+    return trans[2]
+
+
+    # spanko = rospy.Duration(2)
+    #
+    # print pose
+    # rospy.sleep(spanko)
+    # publisher.publish(pose)
+    # rospy.sleep(spanko)
+
+    # pose.pose.orientation.x = pose_g.data[3]
+    # pose.pose.position.x = pose_g.data[2]/1000 - 0.2
+    # pose.pose.position.y = 0.0
+    # pose.pose.position.z = 0.0
+
+    # print pose
+    # rospy.sleep(spanko)
+    # publisher.publish(pose)
+    # rospy.sleep(spanko)
+
 
     # new_matrix = np.matmul(newish_matrix, orientation_ggcnn)
 
