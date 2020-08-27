@@ -14,6 +14,9 @@ import tf
 import moveit_ros_planning_interface as moveit
 import geometry_msgs.msg
 from math import cos, sin
+from std_msgs.msg import Float64, Bool
+from std_srvs.srv import Trigger, TriggerRequest
+from math import pi
 
 
 def euler_to_quaternion(roll, pitch, yaw):
@@ -27,65 +30,145 @@ def quaternion_to_euler(quat):
     return [roll, pitch, yaw]
 
 
-def move2(pose_g, min_z, listener, group, planning_frame, eef_link,rot_z=0):
+def grip(gripper, run_program, range):
+
+    rospy.sleep(1)
+    cmd = Float64(range)
+    ans = gripper(cmd)
+    running = False
+    while not running:
+        msg = rospy.wait_for_message('/arm_controller/ur_hardware_interface/robot_program_running', Bool)
+        running = msg.data
+        if not running:
+            run_program(TriggerRequest())
+    if ans.success:
+        print("Gripped something")
+    else:
+        print("Nothing is gripped")
+    return ans
+
+
+def move2(pose_g, min_z, listener, group, planning_frame, eef_link, gripper, run_program, rot_z=0):
     step = - 0.05
-    xy_step = 0.05
+    xy_step = 0.07
+    PRINT = True
+    object = "ring"
 
     #MoveIt
     try:
         trans, rot = listener.lookupTransform(planning_frame, eef_link, rospy.Time(0))
 
-        current_z_rot = quaternion_to_euler(rot)[2]
+        current_rot = quaternion_to_euler(rot)
+        current_z_rot = -current_rot[2]
+        target_z_rot = current_z_rot - pose_g[3] - 3* (pi/4.0)
+        while target_z_rot > pi:
+            target_z_rot -= pi
+        while target_z_rot < -pi:
+            target_z_rot += pi
+
+        target_rot = euler_to_quaternion(current_rot[0], current_rot[1], target_z_rot)
 
         cos_z = cos(current_z_rot)
         sin_z = sin(current_z_rot)
 
-        x = pose_g[1]/ 1000
-        y = pose_g[0]/ 1000
-        z = -pose_g[2] / 1000 + 0.15
+        x = -pose_g[1]/ 1000
+        y = -pose_g[0]/ 1000
+        z = -pose_g[2] / 1000
+        grip_range = abs(pose_g[4])
 
-        print "X "+str(x)
-        print "Y "+str(y)
+        if grip_range > 80:
+            grip_range = 80
+        elif grip_range < 45 and grip_range > 0:
+            grip_range = 45
+        if object.lower() == "ring":
+            grip_range = 35
 
-        if z < step:
+        z += 0.138
+
+        final_move = trans[2] - min_z < 0.2
+
+        if z < step and not final_move:
             z = step
 
-        if x < -xy_step:
-            x = -xy_step
-        elif x > xy_step:
-            x = xy_step
-        if y < -xy_step:
-            y = -xy_step
-        elif y > xy_step:
-            y = xy_step
+        if not final_move:
+            if x < -xy_step:
+                x = -xy_step
+            elif x > xy_step:
+                x = xy_step
+            if y < -xy_step:
+                y = -xy_step
+            elif y > xy_step:
+                y = xy_step
 
-        x += 0.07
-        y += 0.02
+        if final_move:
+            grip(gripper, run_program, grip_range)
+            x += 0.065
+            y += 0.025
+        if PRINT:
+            print "X " + str(x)
+            print "Y " + str(y)
+            print "ROT_Z " + str(current_z_rot)
+            print "TARGET_ROT_Z " + str(target_z_rot)
+            print "SIN_Z " + str(sin_z)
+            print "COS_Z " + str(cos_z)
+            print "WIDTH " + str(pose_g[4])
+            print "ROT " + str(pose_g[3])
+
         # x = 0.0
         # y = 0.0
-
         pose_goal = geometry_msgs.msg.Pose()
+        if final_move:
+
+            pose_goal.position.x = trans[0]
+            pose_goal.position.y = trans[1]
+            pose_goal.position.z = trans[2]
+            pose_goal.orientation.w = target_rot[3]
+            pose_goal.orientation.x = target_rot[0]
+            pose_goal.orientation.y = target_rot[1]
+            pose_goal.orientation.z = target_rot[2]
+
+            group.set_pose_target(pose_goal)
+
+            plan = group.go(wait=True)
+            # Calling `stop()` ensures that there is no residual movement
+            group.stop()
+            # It is always good to clear your targets after planning with poses.
+            group.clear_pose_targets()
+            rospy.sleep(1.0)
+            trans, rot = listener.lookupTransform(planning_frame, eef_link, rospy.Time(0))
+
+        pose_goal.position.x = trans[0] + x * sin_z + y * cos_z
+        pose_goal.position.y = trans[1] + y * sin_z + x * cos_z
+        pose_goal.position.z = trans[2] + z
+
         pose_goal.orientation.w = rot[3]
         pose_goal.orientation.x = rot[0]
         pose_goal.orientation.y = rot[1]
         pose_goal.orientation.z = rot[2]
-        pose_goal.position.x = trans[0] + x * sin_z + y * cos_z
-        pose_goal.position.y = trans[1] + y * sin_z + x * cos_z
-        pose_goal.position.z = trans[2] + z
+
 
         if pose_goal.position.z < min_z:
             pose_goal.position.z = min_z
 
         group.set_pose_target(pose_goal)
 
-        print pose_goal
+        if PRINT:
+            print("ROZNICE")
+            print(pose_goal.position.x - trans[0], pose_goal.position.y - trans[1], pose_goal.position.z - trans[2])
+            print(pose_goal.orientation.w - rot[3],
+                  pose_goal.orientation.x - rot[0],
+                  pose_goal.orientation.y - rot[1],
+                  pose_goal.orientation.z - rot[2])
+
+            print pose_goal
 
         plan = group.go(wait=True)
         # Calling `stop()` ensures that there is no residual movement
         group.stop()
         # It is always good to clear your targets after planning with poses.
         group.clear_pose_targets()
-        rospy.sleep(1.0)
+
+        return final_move
 
     except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
         print "Couldn't find " + planning_frame + "->" + eef_link + " transform"
