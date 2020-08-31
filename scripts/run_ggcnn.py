@@ -46,7 +46,7 @@ graph = tf.get_default_graph()
 
 # Get the camera parameters
 print('Waiting for /camera_info')
-camera_info_msg = rospy.wait_for_message('/camera/depth/camera_info', CameraInfo)
+camera_info_msg = rospy.wait_for_message('/camera/aligned_depth_to_color/camera_info', CameraInfo)
 print('Got /camera_info, moving on')
 K = camera_info_msg.K
 fx = K[0]
@@ -134,7 +134,7 @@ def depth_callback(depth_message):
 
     with TimeIt('Filter'):
         # Filter the outputs.
-        points_out = ndimage.filters.gaussian_filter(points_out, 4.0)  # 3.0
+        points_out = ndimage.filters.gaussian_filter(points_out, 3.0)  # 3.0
         ang_out = ndimage.filters.gaussian_filter(ang_out, 5.0)
 
     with TimeIt('Control'):
