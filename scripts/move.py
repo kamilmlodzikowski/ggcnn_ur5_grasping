@@ -159,11 +159,11 @@ while not rospy.is_shutdown():
     poses = []
     cur_z = tools.get_current_z(listener, planning_frame, eef_link)
     if cur_z - min_z < 0.2:
-        rang = range(20)
-        cut = 12
+        rang = range(15)
+        cut = 8
     else:
-        rang = range(10)
-        cut = 4
+        rang = range(8)
+        cut = 3
 
 
     for i in rang:

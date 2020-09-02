@@ -52,6 +52,7 @@ def move2(pose_g, min_z, listener, group, planning_frame, eef_link, gripper, run
     step = - 0.05
     xy_step = 0.07
     PRINT = True
+    # object = "btube"
     object = "ring"
 
     #MoveIt
@@ -81,7 +82,9 @@ def move2(pose_g, min_z, listener, group, planning_frame, eef_link, gripper, run
         elif grip_range < 45 and grip_range > 0:
             grip_range = 45
         if object.lower() == "ring":
-            grip_range = 35
+            grip_range = 45
+        elif object.lower() == "btube":
+            grip_range = 80
 
         z += 0.138
 
@@ -102,7 +105,7 @@ def move2(pose_g, min_z, listener, group, planning_frame, eef_link, gripper, run
 
         if final_move:
             grip(gripper, run_program, grip_range)
-            x += 0.065
+            x += 0.06
             y += 0.025
         if PRINT:
             print "X " + str(x)
