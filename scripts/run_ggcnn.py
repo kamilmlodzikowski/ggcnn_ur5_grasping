@@ -42,7 +42,7 @@ prev_mp = np.array([150, 150])
 ROBOT_Z = 0
 
 # Tensorflow graph to allow use in callback.
-graph = tf.get_default_graph()
+#graph = tf.get_default_graph()
 
 # Get the camera parameters
 print('Waiting for /camera_info')
@@ -86,7 +86,7 @@ def depth_callback(depth_message):
         depth = bridge.imgmsg_to_cv2(depth_message)
 
         # Crop a square out of the middle of the depth and resize it to 300*300
-        crop_size = depth.shape[0]
+        crop_size = 400  # depth.shape[0]
         depth_crop = cv2.resize(depth[(480-crop_size)//2:(480-crop_size)//2+crop_size, (640-crop_size)//2:(640-crop_size)//2+crop_size], (300, 300))
 
         # Replace nan with 0 for inpainting.
@@ -113,13 +113,13 @@ def depth_callback(depth_message):
         # Figure out roughly the depth in mm of the part between the grippers for collision avoidance.
         depth_center = depth_crop[100:141, 130:171].flatten()
         depth_center.sort()
-        depth_center = depth_center[:10].mean()
+        depth_center = depth_center[:10].mean() * 1000
 
     with TimeIt('Inference'):
         # Run it through the network.
         depth_crop = np.clip((depth_crop - depth_crop.mean()), -1, 1)
-        with graph.as_default():
-            pred_out = model.predict(depth_crop.reshape((1, 300, 300, 1)))
+        #with graph.as_default():
+        pred_out = model.predict(depth_crop.reshape((1, 300, 300, 1)))
 
         points_out = pred_out[0].squeeze()
         points_out[depth_nan] = 0
@@ -134,8 +134,8 @@ def depth_callback(depth_message):
 
     with TimeIt('Filter'):
         # Filter the outputs.
-        points_out = ndimage.filters.gaussian_filter(points_out, 3.0)  # 3.0
-        ang_out = ndimage.filters.gaussian_filter(ang_out, 5.0)
+        points_out = ndimage.filters.gaussian_filter(points_out, 5.0)  # 3.0
+        ang_out = ndimage.filters.gaussian_filter(ang_out, 2.0)
 
     with TimeIt('Control'):
         # Calculate the best pose from the camera intrinsics.
@@ -177,7 +177,8 @@ def depth_callback(depth_message):
     with TimeIt('Draw'):
         # Draw grasp markers on the points_out and publish it. (for visualisation)
         grasp_img = np.zeros((300, 300, 3), dtype=np.uint8)
-        grasp_img[:,:,2] = (points_out * 255.0)
+        points_out = np.clip(points_out*255, 0, 255)
+        grasp_img[:,:,2] = (points_out)
 
         grasp_img_plain = grasp_img.copy()
 
