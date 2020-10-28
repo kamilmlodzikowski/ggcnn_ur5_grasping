@@ -42,7 +42,7 @@ prev_mp = np.array([150, 150])
 ROBOT_Z = 0
 
 # Tensorflow graph to allow use in callback.
-#graph = tf.get_default_graph()
+graph = tf.get_default_graph()
 
 # Get the camera parameters
 print('Waiting for /camera_info')
