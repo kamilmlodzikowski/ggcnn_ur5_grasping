@@ -209,6 +209,6 @@ def depth_callback(depth_message):
 
 
 
-depth_sub = rospy.Subscriber('/camera/aligned_depth_to_color/image_raw', Image, depth_callback, queue_size=1)
+depth_sub = rospy.Subscriber('object_detection/depth_GG', Image, depth_callback, queue_size=1)
 #robot_pos_sub = rospy.Subscriber('/UR5_pose', PoseStamped, robot_pos_callback, queue_size=1)
 rospy.spin()
