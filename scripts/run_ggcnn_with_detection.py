@@ -42,7 +42,7 @@ prev_mp = np.array([150, 150])
 ROBOT_Z = 0
 
 # Tensorflow graph to allow use in callback.
-#graph = tf.get_default_graph()
+graph = tf.get_default_graph()
 
 # Get the camera parameters
 print('Waiting for /camera_info')
@@ -118,8 +118,8 @@ def depth_callback(depth_message):
     with TimeIt('Inference'):
         # Run it through the network.
         depth_crop = np.clip((depth_crop - depth_crop.mean()), -1, 1)
-        #with graph.as_default():
-        pred_out = model.predict(depth_crop.reshape((1, 300, 300, 1)))
+        with graph.as_default():
+            pred_out = model.predict(depth_crop.reshape((1, 300, 300, 1)))
 
         points_out = pred_out[0].squeeze()
         points_out[depth_nan] = 0
